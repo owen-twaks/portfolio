@@ -16,18 +16,43 @@ window.addEventListener('scroll', () => {
 // ===========================
 const hamburger = document.getElementById('hamburger');
 const navLinks = document.getElementById('navLinks');
+const body = document.body;
+
+function openMenu() {
+  hamburger.classList.add('active');
+  navLinks.classList.add('open');
+  hamburger.setAttribute('aria-expanded', 'true');
+  body.style.overflow = 'hidden';
+}
+
+function closeMenu() {
+  hamburger.classList.remove('active');
+  navLinks.classList.remove('open');
+  hamburger.setAttribute('aria-expanded', 'false');
+  body.style.overflow = '';
+}
 
 hamburger.addEventListener('click', () => {
-  hamburger.classList.toggle('active');
-  navLinks.classList.toggle('open');
+  if (navLinks.classList.contains('open')) {
+    closeMenu();
+  } else {
+    openMenu();
+  }
 });
 
 // Close mobile menu when a link is clicked
 navLinks.querySelectorAll('.nav-link').forEach(link => {
   link.addEventListener('click', () => {
-    hamburger.classList.remove('active');
-    navLinks.classList.remove('open');
+    closeMenu();
   });
+});
+
+// Close mobile menu on escape key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && navLinks.classList.contains('open')) {
+    closeMenu();
+    hamburger.focus();
+  }
 });
 
 // ===========================
@@ -84,15 +109,58 @@ revealElements.forEach(el => revealObserver.observe(el));
 // ===========================
 const contactForm = document.getElementById('contactForm');
 
+function setFieldError(field, hasError) {
+  if (hasError) {
+    field.classList.add('form-error');
+  } else {
+    field.classList.remove('form-error');
+  }
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 contactForm.addEventListener('submit', (e) => {
   e.preventDefault();
 
-  const name = document.getElementById('name').value.trim();
-  const email = document.getElementById('email').value.trim();
-  const message = document.getElementById('message').value.trim();
+  const nameField = document.getElementById('name');
+  const emailField = document.getElementById('email');
+  const messageField = document.getElementById('message');
 
-  if (!name || !email || !message) {
-    showNotification('Please fill in all fields.', 'error');
+  const name = nameField.value.trim();
+  const email = emailField.value.trim();
+  const message = messageField.value.trim();
+
+  let hasError = false;
+
+  if (name.length < 2) {
+    setFieldError(nameField, true);
+    hasError = true;
+  } else {
+    setFieldError(nameField, false);
+  }
+
+  if (!email || !isValidEmail(email)) {
+    setFieldError(emailField, true);
+    hasError = true;
+  } else {
+    setFieldError(emailField, false);
+  }
+
+  if (message.length < 10) {
+    setFieldError(messageField, true);
+    hasError = true;
+  } else {
+    setFieldError(messageField, false);
+  }
+
+  if (hasError) {
+    showNotification('Please fix the highlighted fields and try again.', 'error');
+    // Focus first error field
+    if (name.length < 2) nameField.focus();
+    else if (!email || !isValidEmail(email)) emailField.focus();
+    else messageField.focus();
     return;
   }
 
@@ -108,6 +176,15 @@ contactForm.addEventListener('submit', (e) => {
     btn.innerHTML = originalContent;
     btn.disabled = false;
   }, 1500);
+});
+
+// Clear error state on input
+['name', 'email', 'message'].forEach(id => {
+  const field = document.getElementById(id);
+  if (field) {
+    field.addEventListener('input', () => setFieldError(field, false));
+    field.addEventListener('change', () => setFieldError(field, false));
+  }
 });
 
 // ===========================
@@ -180,11 +257,17 @@ function showNotification(message, type = 'success') {
 // ===========================
 // SMOOTH SCROLL FOR ALL ANCHORS
 // ===========================
+// ===========================
+// SMOOTH SCROLL FOR ALL ANCHORS
+// ===========================
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
   anchor.addEventListener('click', function (e) {
-    e.preventDefault();
-    const target = document.querySelector(this.getAttribute('href'));
+    const href = this.getAttribute('href');
+    // Only handle in-page anchors
+    if (!href || href === '#') return;
+    const target = document.querySelector(href);
     if (target) {
+      e.preventDefault();
       target.scrollIntoView({ behavior: 'smooth' });
     }
   });
